@@ -184,7 +184,7 @@ Download Template berikut dari link [https://github.com/aturridwan07/template-ad
 2. ```Start``` service MYSQL.
 
 ### Buat Database
-1. buka http://localhost/phpmyadmin di browser.
+1. buka http://localhost/phpmyadmin di browser. (Dibutuhkan service Apache berjalan di XAMPP)
 2. kemudian buat sebuah database baru dengan cara klik di menu ```Databases``` dan ketikan nama database ``blog_db`` kemudian klik tombol ``create``
 
 ### Setting jalur ke database
@@ -201,7 +201,8 @@ Berikut cara untuk mensetting jalur :
     DB_PASSWORD=secret
     ```
 3. Kemudian rubah menjadi :
-   ```DB_CONNECTION=mysql
+   ```
+    DB_CONNECTION=mysql
     DB_HOST=127.0.0.1
     DB_PORT=3306
     DB_DATABASE=blog_db
@@ -215,3 +216,57 @@ Ikuti langkah-langkah berikut :
 1. Ketik perintah berikut untuk membuat Controller dengan Resources.
 
     ``` php artisan make:model Article --migration ```
+2. Kemudian buka folder **blog -> app** akan terdapat file dengan nama ``Article.php``
+3. Kemudian buka folder **blog -> database -> migrations** akan terdapat file dengan nama ``YYYY_MM_DD_XXXXXX_create_articles_table.php`` kemudia buka file tersebut.
+4. Dalam file ``YYYY_MM_DD_XXXXXX_create_articles_table.php`` ini buatlah `function up()` jadi seperti berikut untuk menambahkan field ke dalam tabel Article nanti di database `blog_db` yang telah dibuat sebelumnya.
+   ``` php
+    public function up()
+    {
+        Schema::create('articles', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('judul');
+            $table->string('penulis');
+            $table->text('content');
+            $table->string('status_posted');
+            $table->timestamps();
+        });
+    }
+    ```
+5. Lalu buka file `AppServiceProvider.php` yang ada di dalam folder **blog -> app -> Providers** dan ubah function boot() menjadi seperti berikut agar tidak ada error saat proses migration :
+    ``` php
+    use Illuminate\Support\Facades\Schema; // tambahkan ini
+    class AppServiceProvider extends ServiceProvider
+    {
+        ...
+        public function boot()
+        {
+            Schema::defaultStringLength(191); // tambahkan ini
+        }
+    ```
+6. Kemudian jalankan perintah :
+   
+    ``` php artisan migrate ```
+7. Dan lihat di phpmyadmin apakah bertambah satu tabel di database `blog_db` dengan nama `articles`.
+
+## Ubah Articles Controller
+1. Ubah file **ArticlesController.php** yang telah dibuat sebelumnya di folder **blog -> app ->Http -> Contollers** dari `public function index()` yang asalnya :
+    ``` php
+    class ArticlesController extends Controller
+    {
+        public function index()
+        {
+            return view("listArticle");
+        }
+    ```
+    Menjadi :
+    ``` php
+    use App\Article; //tambahkan ini
+    class ArticlesController extends Controller
+    {
+        public function index()
+        {
+            return Article::all(); // tambahkan ini
+            //return view("listArticle");  ini dijadikan komentar
+        }
+    ```
+2. Kemudian jalankan perintah `php artisan serve` dan buka http://127.0.0.1:8000/list-article.
